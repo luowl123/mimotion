@@ -142,9 +142,15 @@ def main(_user, _passwd, _step):
     if _step == '':
         print("已设置为随机步数（10000-19999）")
         _step = str(random.randint(10000, 19999))
-    login_token, userid = login(_user, password)
+    
+    fillUser = ""
+    if ("+86" in _user) or "@" in _user:
+        fillUser = user
+    else:
+        fillUser = "+86" + user    
+    login_token, userid = login(fillUser, password)
     if login_token == 0:
-        print("登陆失败！")
+        print(fillUser + "->登陆失败！")
         return "login fail!"
 
     t = get_time()
