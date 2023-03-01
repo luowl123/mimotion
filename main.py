@@ -29,7 +29,7 @@ def get_code(location):
     return code
 
 
-def login(_user, password):
+def login1(_user, password):
     """
     登录
     """
@@ -74,6 +74,59 @@ def login(_user, password):
 
     return login_token, userid
 
+def login(user, password):
+        try:
+            url1 = f"https://api-user.huami.com/registrations/{user}/tokens"
+            headers = {
+                "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+                "User-Agent": "MiFit/4.6.0 (iPhone; iOS 14.0.1; Scale/2.00)",
+            }
+            data1 = {
+                "client_id": "HuaMi",
+                "password": f"{password}",
+                "redirect_uri": "https://s3-us-west-2.amazonaws.com/hm-registration/successsignin.html",
+                "token": "access",
+            }
+
+            r1 = requests.post(url=url1, data=data1, headers=headers, allow_redirects=False)
+            location = r1.headers["Location"]
+            code_pattern = re.compile("(?<=access=).*?(?=&)")
+            code = code_pattern.findall(location)[0]
+            url2 = "https://account.huami.com/v2/client/login"        
+            if "+86" in user:
+                data2 = {
+                    "app_name": "com.xiaomi.hm.health",
+                    "app_version": "5.0.2",
+                    "code": f"{code}",
+                    "country_code": "CN",
+                    "device_id": "10E2A98F-D36F-4DF1-A7B9-3FBD8FBEB800",
+                    "device_model": "phone",
+                    "grant_type": "access_token",
+                    "third_name": "huami_phone",
+                }
+            if "@" in user:
+                data2 = {
+                    "allow_registration=": "false",
+                    "app_name": "com.xiaomi.hm.health",
+                    "app_version": "6.5.5",
+                    "code": f"{code}",
+                    "country_code": "CN",
+                    "device_id": "2C8B4939-0CCD-4E94-8CBA-CB8EA6E613A1",
+                    "device_model": "phone",
+                    "dn": "api-user.huami.com%2Capi-mifit.huami.com%2Capp-analytics.huami.com",
+                    "grant_type": "access_token",
+                    "lang": "zh_CN",
+                    "os_version": "1.5.0",
+                    "source": "com.xiaomi.hm.health",
+                    "third_name": "email",
+                }
+            r2 = requests.post(url=url2, data=data2, headers=headers).json()
+            login_token = r2["token_info"]["login_token"]
+            userid = r2["token_info"]["user_id"]
+            return login_token, userid
+        except Exception as e:
+            print(e)
+            return
 
 def main(_user, _passwd, _step):
     """
