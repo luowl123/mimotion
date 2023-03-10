@@ -126,7 +126,7 @@ def login(user, password):
             return login_token, userid
         except Exception as e:
             print(e)
-            return
+            return 0, 0
 
 def main(_user, _passwd, _step):
     """
@@ -150,7 +150,7 @@ def main(_user, _passwd, _step):
         fillUser = "+86" + user    
     login_token, userid = login(fillUser, password)
     if login_token == 0:
-        print(fillUser + "->登陆失败！")
+        print(f"{_user[:4]}****{_user[-4:]}: [{now}] ->登陆失败！" )
         return "login fail!"
 
     t = get_time()
