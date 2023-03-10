@@ -19,6 +19,20 @@ headers = {
     'User-Agent': 'Dalvik/2.1.0 (Linux; U; Android 9; MI 6 MIUI/20.6.18)'
 }
 
+app_version = "6.3.5"
+device_ids = [
+    "2A1B4939-1CDE-4E94-1ABA-AB8EA6E613A1",
+    "3B2B4939-2CBD-4E94-2BBA-CB8EA6E613A1",
+    "4C3B4939-3CAD-4E94-3CCA-DB8EA6E613A1",
+    "5D4B4939-4CED-4E94-4DAA-EB8EA6E613A1",
+    "6E5B4939-5DCD-4E94-5ECA-AB8EA6E613A1",
+    "7A6B4939-6BBD-4E94-6ADA-BB8EA6E613A1",
+    "8B7B4939-7AAD-4E94-7BCA-CB8EA6E613A1",
+    "9C9B4939-8ECD-4E94-8CBA-DB8EA6E613A1",
+    "1D0B4939-9DBD-4E94-8DAA-EB8EA6E613A1",
+    "2E2B4939-0ADD-4E94-9EDA-AB8EA6E613A1",
+    "3A8B4939-1CED-4E94-1CEA-BB8EA6E613A1"
+]
 
 def get_code(location):
     """
@@ -56,7 +70,7 @@ def login1(_user, password):
     url2 = "https://account.huami.com/v2/client/login"
     data2 = {
         "app_name": "com.xiaomi.hm.health",
-        "app_version": "4.6.0",
+        "app_version": app_version,
         "code": f"{code}",
         "country_code": "CN",
         "device_id": "2C8B4939-0CCD-4E94-8CBA-CB8EA6E613A1",
@@ -74,61 +88,72 @@ def login1(_user, password):
 
     return login_token, userid
 
-def login(user, password):
-        try:
-            url1 = f"https://api-user.huami.com/registrations/{user}/tokens"
-            headers = {
-                "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-                "User-Agent": "MiFit/4.6.0 (iPhone; iOS 14.0.1; Scale/2.00)",
-            }
-            data1 = {
-                "client_id": "HuaMi",
-                "password": f"{password}",
-                "redirect_uri": "https://s3-us-west-2.amazonaws.com/hm-registration/successsignin.html",
-                "token": "access",
-            }
+def login(user, password,device_id):
+    is_phone = False
+    if re.match(r'\d{11}', user):
+        is_phone = True
+    if is_phone:
+        url1 = "https://api-user.huami.com/registrations/+86" + user + "/tokens"
+    else:
+        url1 = "https://api-user.huami.com/registrations/" + user + "/tokens"
+    headers = {
+        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 14_7_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.2"
+    }
+    data1 = {
+        "client_id": "HuaMi",
+        "password": f"{password}",
+        "redirect_uri": "https://s3-us-west-2.amazonaws.com/hm-registration/successsignin.html",
+        "token": "access"
+    }
+    r1 = requests.post(url1, data=data1, headers=headers, allow_redirects=False)
+    location = r1.headers["Location"]
+    try:
+        code = get_code(location)
+    except:
+        return 0, 0
+    # print("access_code获取成功！")
+    # print(code)
 
-            r1 = requests.post(url=url1, data=data1, headers=headers, allow_redirects=False)
-            location = r1.headers["Location"]
-            code_pattern = re.compile("(?<=access=).*?(?=&)")
-            code = code_pattern.findall(location)[0]
-            url2 = "https://account.huami.com/v2/client/login"        
-            if "+86" in user:
-                data2 = {
-                    "app_name": "com.xiaomi.hm.health",
-                    "app_version": "5.0.2",
-                    "code": f"{code}",
-                    "country_code": "CN",
-                    "device_id": "10E2A98F-D36F-4DF1-A7B9-3FBD8FBEB800",
-                    "device_model": "phone",
-                    "grant_type": "access_token",
-                    "third_name": "huami_phone",
-                }
-            if "@" in user:
-                data2 = {
-                    "allow_registration=": "false",
-                    "app_name": "com.xiaomi.hm.health",
-                    "app_version": "6.5.5",
-                    "code": f"{code}",
-                    "country_code": "CN",
-                    "device_id": "2C8B4939-0CCD-4E94-8CBA-CB8EA6E613A1",
-                    "device_model": "phone",
-                    "dn": "api-user.huami.com%2Capi-mifit.huami.com%2Capp-analytics.huami.com",
-                    "grant_type": "access_token",
-                    "lang": "zh_CN",
-                    "os_version": "1.5.0",
-                    "source": "com.xiaomi.hm.health",
-                    "third_name": "email",
-                }
-            r2 = requests.post(url=url2, data=data2, headers=headers).json()
-            login_token = r2["token_info"]["login_token"]
-            userid = r2["token_info"]["user_id"]
-            return login_token, userid
-        except Exception as e:
-            print(e)
-            return 0, 0
+    url2 = "https://account.huami.com/v2/client/login"
+    if is_phone:
+        data2 = {
+            "app_name": "com.xiaomi.hm.health",
+            "app_version": f"{app_version}",
+            "code": f"{code}",
+            "country_code": "CN",
+            "device_id": f"{device_id}",
+            "device_model": "phone",
+            "grant_type": "access_token",
+            "third_name": "huami_phone",
+        }
+    else:
+        data2 = {
+            "allow_registration=": "false",
+            "app_name": "com.xiaomi.hm.health",
+            "app_version": f"{app_version}",
+            "code": f"{code}",
+            "country_code": "CN",
+            "device_id": f"{device_id}",
+            "device_model": "phone",
+            "dn": "api-user.huami.com%2Capi-mifit.huami.com%2Capp-analytics.huami.com",
+            "grant_type": "access_token",
+            "lang": "zh_CN",
+            "os_version": "1.5.0",
+            "source": "com.xiaomi.hm.health",
+            "third_name": "email",
+        }
+    r2 = requests.post(url2, data=data2, headers=headers).json()
+    login_token = r2["token_info"]["login_token"]
+    # print("login_token获取成功！")
+    # print(login_token)
+    userid = r2["token_info"]["user_id"]
+    # print("userid获取成功！")
+    # print(userid)
 
-def main(_user, _passwd, _step):
+    return login_token, userid
+
+def main(_user, _passwd, _step,_device_id):
     """
     主函数
     """
@@ -142,13 +167,8 @@ def main(_user, _passwd, _step):
     if _step == '':
         print("已设置为随机步数（10000-19999）")
         _step = str(random.randint(10000, 19999))
-    
-    fillUser = ""
-    if ("+86" in _user) or "@" in _user:
-        fillUser = user
-    else:
-        fillUser = "+86" + user    
-    login_token, userid = login(fillUser, password)
+          
+    login_token, userid = login(_user, password,str(_device_id))
     if login_token == 0:
         print(f"{_user[:4]}****{_user[-4:]}: [{now}] ->登陆失败！" )
         return "login fail!"
@@ -631,17 +651,21 @@ if __name__ == "__main__":
 
     user_list = user.split('#')
     passwd_list = passwd.split('#')
-    setp_array = step.split('-')
+    setp_array = step.split('-')    
 
     if len(user_list) == len(passwd_list):
+        device_id_list = []
+        default_device_ids_len = len(device_ids)
+        for index in range(len(user_list)):
+            device_id_list.append(device_ids[index % default_device_ids_len])
         to_push.push_msg = ''
-        for user, passwd in zip(user_list, passwd_list):
+        for user, passwd , device_id in zip(user_list, passwd_list , device_id_list):
             if len(setp_array) == 2:
                 step = str(random.randint(int(setp_array[0]), int(setp_array[1])))
                 print(f"已设置为随机步数（{setp_array[0]}-{setp_array[1]}）")
             elif str(step) == '0':
                 step = ''
-            to_push.push_msg += main(user, passwd, step) + '\n'
+            to_push.push_msg += main(user, passwd, step , device_id) + '\n'
 
         push = {
             'wx': to_push.to_push_wx,
